@@ -1,5 +1,8 @@
 import { useState, useEffect } from 'react'
 import axios from "axios"
+
+import dbService from "./services/db"
+
 import Filter from "./components/Filter"
 import PersonForm from "./components/PersonForm"
 import Persons from "./components/Persons"
@@ -24,18 +27,38 @@ const App = () => {
     // console.log("Form Submitted!")
     event.preventDefault()
     if (persons.map(p => p.name).includes(newName)) {
-      alert(`${newName} is already added to phonebook`)
+      if (window.confirm(`${newName} is already added to phonebook. Replace old number with a new one?`)) {
+        const person = { ...persons.find((p) => p.name === newName), number: newNumber }
+        dbService
+          .update(person)
+      }
     }
     else {
-      setPersons(persons.concat(
-        {
-          name: newName,
-          number: newNumber
-        }
-      ))
+      const personObject = {
+        name: newName,
+        number: newNumber
+      }
+      dbService
+        .create(personObject)
+        .then((person) => {
+          setPersons(persons.concat(person))
+        })
     }
     setNewName("")
     setNewNumber("")
+  }
+
+  const removePerson = (person) => {
+    if (window.confirm(`Delete ${person.name}?`)) {
+      dbService
+        .remove(person.id)
+        .then((id) => {
+          setPersons(
+            persons.filter((person) =>
+              person.id !== id)
+          )
+        })
+    }
   }
 
   return (
@@ -57,6 +80,7 @@ const App = () => {
       <Persons
         persons={persons}
         filter={filter}
+        removePerson={removePerson}
       />
     </div>
   )
