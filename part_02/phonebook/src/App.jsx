@@ -26,24 +26,32 @@ const App = () => {
   const addPerson = (event) => {
     // console.log("Form Submitted!")
     event.preventDefault()
-    if (persons.map(p => p.name).includes(newName)) {
-      if (window.confirm(`${newName} is already added to phonebook. Replace old number with a new one?`)) {
-        const person = { ...persons.find((p) => p.name === newName), number: newNumber }
-        dbService
-          .update(person)
-      }
-    }
-    else {
-      const personObject = {
+    // check if person already in phonebook
+    const person = persons.find((p) => p.name === newName)
+    // there is no person
+    if (typeof person === "undefined") {
+      const newPerson = {
         name: newName,
         number: newNumber
       }
       dbService
-        .create(personObject)
-        .then((person) => {
-          setPersons(persons.concat(person))
+        .create(newPerson)
+        .then((p) => {
+          setPersons(persons.concat(p))
         })
     }
+    // person already present
+    else {
+      if (window.confirm(`${newName} is already added to phonebook. Replace old number (${person.number}) with a new one (${newNumber})?`)) {
+        const updatedPerson = { ...person, number: newNumber }
+        dbService
+          .update(updatedPerson)
+          .then((p) => {
+            setPersons(persons.map((person) => p.id !== person.id ? person : p))
+          })
+      }
+    }
+
     setNewName("")
     setNewNumber("")
   }

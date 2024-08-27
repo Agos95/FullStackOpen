@@ -6,8 +6,7 @@ const create = (personObject) => {
     const request = axios.post(baseUrl, personObject)
     return request.then((response) => {
         return response.data
-    }
-    )
+    })
 }
 
 const remove = (id) => {
@@ -17,12 +16,9 @@ const remove = (id) => {
 
 const update = (personObject) => {
     const request = axios.put(`${baseUrl}/${personObject.id}`, personObject)
-    console.log(request)
-    return response
-    // return request.then((response) => {
-    //     return response.data
-    // }
-    // )
+    return request.then((response) => {
+        return response.data
+    })
 }
 
 
