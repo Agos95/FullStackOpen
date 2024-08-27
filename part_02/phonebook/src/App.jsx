@@ -6,19 +6,23 @@ import dbService from "./services/db"
 import Filter from "./components/Filter"
 import PersonForm from "./components/PersonForm"
 import Persons from "./components/Persons"
+import Message from "./components/Message"
+
+import "./index.css"
 
 const App = () => {
   const [persons, setPersons] = useState([])
   const [newName, setNewName] = useState("")
   const [newNumber, setNewNumber] = useState("")
   const [filter, setFilter] = useState("")
+  const [message, setMessage] = useState(null)
 
   useEffect(() => {
-    console.log("Getting data with effect")
+    // console.log("Getting data with effect")
     axios
       .get("http://localhost:3001/persons")
       .then((response) => {
-        console.log("promise fullfilled")
+        // console.log("promise fullfilled")
         setPersons(response.data)
       })
   }, [])
@@ -39,6 +43,7 @@ const App = () => {
         .then((p) => {
           setPersons(persons.concat(p))
         })
+      setMessage({ text: `Added '${newPerson.name}'`, type: "message" })
     }
     // person already present
     else {
@@ -49,11 +54,16 @@ const App = () => {
           .then((p) => {
             setPersons(persons.map((person) => p.id !== person.id ? person : p))
           })
+          .catch(() => {
+            setMessage({ text: `Information of '${updatedPerson.name}' has alreay been removed from the server`, type: "error" })
+          })
+        setMessage({ text: `Modified '${updatedPerson.name}'`, type: "message" })
       }
     }
 
     setNewName("")
     setNewNumber("")
+    setTimeout(() => { setMessage(null) }, 2000)
   }
 
   const removePerson = (person) => {
@@ -72,6 +82,7 @@ const App = () => {
   return (
     <div>
       <h2>Phonebook</h2>
+      <Message message={message} />
       <Filter
         filter={filter}
         setFilter={setFilter}
