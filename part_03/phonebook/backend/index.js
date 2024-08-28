@@ -1,11 +1,14 @@
 import express from "express"
 import morgan from "morgan"
+import cors from "cors"
 
 morgan.token("body", (req) => JSON.stringify(req.body))
 
 const app = express()
 app.use(express.json())
 app.use(morgan(":method :url :status :res[content-length] - :response-time ms - :body"))
+app.use(cors())
+app.use(express.static("dist"))
 
 let persons = [
     {
@@ -67,11 +70,13 @@ app.post("/api/persons", (request, response) => {
         response.status(400).json({
             error: "'name' and 'number' must be specified"
         })
+        return
     }
     if (persons.some((p) => p.name === name)) {
         response.status(400).json({
             error: `'${name}' is already in phonebook`
         })
+        return
     }
 
     const person = {

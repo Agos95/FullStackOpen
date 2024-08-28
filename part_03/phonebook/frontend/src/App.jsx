@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react'
-import axios from "axios"
 
 import dbService from "./services/db"
 
@@ -19,11 +18,11 @@ const App = () => {
 
   useEffect(() => {
     // console.log("Getting data with effect")
-    axios
-      .get("http://localhost:3001/persons")
-      .then((response) => {
+    dbService
+      .getAll()
+      .then((data) => {
         // console.log("promise fullfilled")
-        setPersons(response.data)
+        setPersons(data)
       })
   }, [])
 
@@ -42,8 +41,11 @@ const App = () => {
         .create(newPerson)
         .then((p) => {
           setPersons(persons.concat(p))
+          setMessage({ text: `Added '${newPerson.name}'`, type: "message" })
         })
-      setMessage({ text: `Added '${newPerson.name}'`, type: "message" })
+        .catch((e) => {
+          setMessage({ text: `Failed to add '${newPerson.name}'`, type: "error" })
+        })
     }
     // person already present
     else {
