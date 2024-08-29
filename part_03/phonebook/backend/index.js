@@ -2,6 +2,8 @@ import express from "express"
 import morgan from "morgan"
 import cors from "cors"
 
+import Person from "./people.js"
+
 morgan.token("body", (req) => JSON.stringify(req.body))
 
 const app = express()
@@ -10,28 +12,28 @@ app.use(morgan(":method :url :status :res[content-length] - :response-time ms - 
 app.use(cors())
 app.use(express.static("dist"))
 
-let persons = [
-    {
-        "id": "1",
-        "name": "Arto Hellas",
-        "number": "040-123456"
-    },
-    {
-        "id": "2",
-        "name": "Ada Lovelace",
-        "number": "39-44-5323523"
-    },
-    {
-        "id": "3",
-        "name": "Dan Abramov",
-        "number": "12-43-234345"
-    },
-    {
-        "id": "4",
-        "name": "Mary Poppendieck",
-        "number": "39-23-6423122"
-    }
-]
+// let persons = [
+//     {
+//         "id": "1",
+//         "name": "Arto Hellas",
+//         "number": "040-123456"
+//     },
+//     {
+//         "id": "2",
+//         "name": "Ada Lovelace",
+//         "number": "39-44-5323523"
+//     },
+//     {
+//         "id": "3",
+//         "name": "Dan Abramov",
+//         "number": "12-43-234345"
+//     },
+//     {
+//         "id": "4",
+//         "name": "Mary Poppendieck",
+//         "number": "39-23-6423122"
+//     }
+// ]
 
 app.get("/info", (request, response) => {
     response.send(
@@ -41,18 +43,38 @@ app.get("/info", (request, response) => {
 })
 
 app.get("/api/persons", (request, response) => {
-    response.json(persons)
+    Person
+        .find({})
+        .then((persons) => {
+            console.log(`Got ${persons.length} people from DB`)
+            response.json(persons)
+        })
+        .catch((error) => {
+            console.log("Failed to retrieve people from DB:", error.message)
+            response.status(500).end()
+        })
 })
 
 app.get("/api/persons/:id", (request, response) => {
     const id = request.params.id
-    const person = persons.find((p) => p.id === id)
-    if (person) {
-        response.json(person)
-    }
-    else {
-        response.status(404).end()
-    }
+    Person
+        .findById(id)
+        .then((person) => {
+            if (person) {
+                console.log(`retrieved '${person.name}' from DB`)
+                response.json(person)
+            }
+            else {
+                console.log(`Failed to retrieve person with ID ${id}`)
+                response.status(404).end()
+            }
+        })
+        .catch((error) => {
+            console.log(`Failed to retrieve person with ID ${id}:`, error.message)
+            response.status(404).end()
+        })
+
+
 })
 
 app.delete("/api/persons/:id", (request, response) => {
@@ -91,7 +113,7 @@ app.post("/api/persons", (request, response) => {
 
 
 
-const PORT = 3001
+const PORT = process.env.PORT
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`)
 })
