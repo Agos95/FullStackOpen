@@ -36,10 +36,19 @@ app.use(express.static("dist"))
 // ]
 
 app.get("/info", (request, response) => {
-    response.send(
-        `<p>Phonebook has info for ${persons.length} people.</p>` +
-        `<p>${Date().toString()}</p>`
-    )
+    Person
+        .countDocuments({})
+        .then((N) => {
+            response.send(
+                `<p>Phonebook has info for ${N} people.</p>` +
+                `<p>${Date().toString()}</p>`
+            )
+        })
+        .catch((error) => {
+            console.log("failed to get number of documents:", error)
+            response.status(500).end()
+        })
+
 })
 
 app.get("/api/persons", (request, response) => {
@@ -84,7 +93,6 @@ app.delete("/api/persons/:id", (request, response) => {
 })
 
 app.post("/api/persons", (request, response) => {
-    const id = String(Math.floor(Math.random() * 10000000000))
     // console.log("Body", request.body)
 
     const { name, number } = request.body
@@ -94,21 +102,22 @@ app.post("/api/persons", (request, response) => {
         })
         return
     }
-    if (persons.some((p) => p.name === name)) {
-        response.status(400).json({
-            error: `'${name}' is already in phonebook`
-        })
-        return
-    }
+    // if (persons.some((p) => p.name === name)) {
+    //     response.status(400).json({
+    //         error: `'${name}' is already in phonebook`
+    //     })
+    //     return
+    // }
 
-    const person = {
-        id: id,
+    const person = new Person({
         name: name,
         number: number
-    }
-    persons = persons.concat(person)
-
-    response.json(person)
+    })
+    person
+        .save()
+        .then((result) => {
+            response.json(result)
+        })
 })
 
 
