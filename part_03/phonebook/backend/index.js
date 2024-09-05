@@ -1,16 +1,16 @@
-import express, { response } from "express"
-import morgan from "morgan"
-import cors from "cors"
+import express from 'express'
+import morgan from 'morgan'
+import cors from 'cors'
 
-import Person from "./people.js"
+import Person from './people.js'
 
-morgan.token("body", (req) => JSON.stringify(req.body))
+morgan.token('body', (req) => JSON.stringify(req.body))
 
 const app = express()
 app.use(express.json())
-app.use(morgan(":method :url :status :res[content-length] - :response-time ms - :body"))
+app.use(morgan(':method :url :status :res[content-length] - :response-time ms - :body'))
 app.use(cors())
-app.use(express.static("dist"))
+app.use(express.static('dist'))
 
 // let persons = [
 //     {
@@ -35,120 +35,120 @@ app.use(express.static("dist"))
 //     }
 // ]
 
-app.get("/info", (request, response, next) => {
-    Person
-        .countDocuments({})
-        .then((N) => {
-            response.send(
-                `<p>Phonebook has info for ${N} people.</p>` +
-                `<p>${Date().toString()}</p>`
-            )
-        })
-        .catch((error) => {
-            console.error("failed to get number of documents:", error.message)
-            next(error)
-        })
-
-})
-
-app.get("/api/persons", (request, response, next) => {
-    Person
-        .find({})
-        .then((persons) => {
-            console.log(`Got ${persons.length} people from DB`)
-            response.json(persons)
-        })
-        .catch((error) => {
-            console.error("Failed to retrieve people from DB:", error.message)
-            next(error)
-        })
-})
-
-app.post("/api/persons", (request, response, next) => {
-    // console.log("Body", request.body)
-
-    const { name, number } = request.body
-
-    const person = new Person({
-        name: name,
-        number: number
+app.get('/info', (request, response, next) => {
+  Person
+    .countDocuments({})
+    .then((N) => {
+      response.send(
+        `<p>Phonebook has info for ${N} people.</p>` +
+        `<p>${Date().toString()}</p>`
+      )
     })
-    person
-        .save()
-        .then((result) => {
-            response.json(result)
-        })
-        .catch((error) => {
-            console.error("Failed to save to db:", error.message)
-            next(error)
-        })
-})
-
-app.get("/api/persons/:id", (request, response, next) => {
-    const id = request.params.id
-    Person
-        .findById(id)
-        .then((person) => {
-            if (person) {
-                console.log(`retrieved '${person.name}' from DB`)
-                response.json(person)
-            }
-            else {
-                console.error(`Failed to retrieve person with ID ${id}`)
-                response.status(404).end()
-            }
-        })
-        .catch((error) => {
-            console.error(`Failed to retrieve person with ID ${id}:`, error.message)
-            next(error)
-        })
-
+    .catch((error) => {
+      console.error('failed to get number of documents:', error.message)
+      next(error)
+    })
 
 })
 
-app.delete("/api/persons/:id", (request, response, next) => {
-    Person
-        .findByIdAndDelete(request.params.id)
-        .then((result) => {
-            response.status(204).end()
-        })
-        .catch((error) => {
-            console.error("Failed to delete:", error.message)
-            next(error)
-        })
+app.get('/api/persons', (request, response, next) => {
+  Person
+    .find({})
+    .then((persons) => {
+      console.log(`Got ${persons.length} people from DB`)
+      response.json(persons)
+    })
+    .catch((error) => {
+      console.error('Failed to retrieve people from DB:', error.message)
+      next(error)
+    })
 })
 
-app.put("/api/persons/:id", (request, response, next) => {
-    const { name, number } = request.body
+app.post('/api/persons', (request, response, next) => {
+  // console.log("Body", request.body)
 
-    Person
-        .findByIdAndUpdate(
-            request.params.id,
-            { name, number },
-            { new: true, runValidators: true, context: "query" })
-        .then((updatedPerson) => {
-            response.json(updatedPerson)
-        })
-        .catch((error) => {
-            console.error("Failed tu update:", error.message)
-            next(error)
-        })
+  const { name, number } = request.body
+
+  const person = new Person({
+    name: name,
+    number: number
+  })
+  person
+    .save()
+    .then((result) => {
+      response.json(result)
+    })
+    .catch((error) => {
+      console.error('Failed to save to db:', error.message)
+      next(error)
+    })
+})
+
+app.get('/api/persons/:id', (request, response, next) => {
+  const id = request.params.id
+  Person
+    .findById(id)
+    .then((person) => {
+      if (person) {
+        console.log(`retrieved '${person.name}' from DB`)
+        response.json(person)
+      }
+      else {
+        console.error(`Failed to retrieve person with ID ${id}`)
+        response.status(404).end()
+      }
+    })
+    .catch((error) => {
+      console.error(`Failed to retrieve person with ID ${id}:`, error.message)
+      next(error)
+    })
+
+
+})
+
+app.delete('/api/persons/:id', (request, response, next) => {
+  Person
+    .findByIdAndDelete(request.params.id)
+    .then(() => {
+      response.status(204).end()
+    })
+    .catch((error) => {
+      console.error('Failed to delete:', error.message)
+      next(error)
+    })
+})
+
+app.put('/api/persons/:id', (request, response, next) => {
+  const { name, number } = request.body
+
+  Person
+    .findByIdAndUpdate(
+      request.params.id,
+      { name, number },
+      { new: true, runValidators: true, context: 'query' })
+    .then((updatedPerson) => {
+      response.json(updatedPerson)
+    })
+    .catch((error) => {
+      console.error('Failed tu update:', error.message)
+      next(error)
+    })
 })
 
 
 const unknownEndpoint = (request, response) => {
-    response.status(404).send({ error: 'unknown endpoint' })
+  response.status(404).send({ error: 'unknown endpoint' })
 }
 
 app.use(unknownEndpoint)
 
-const errorHandler = (error, request, response, next) => {
-    return response.status(400).json({ error: error.message })
+const errorHandler = (error, request, response) => {
+  return response.status(400).json({ error: error.message })
 }
 
 app.use(errorHandler)
 
 const PORT = process.env.PORT
 app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`)
+  console.log(`Server running on port ${PORT}`)
 })
