@@ -45,7 +45,7 @@ app.get("/info", (request, response, next) => {
             )
         })
         .catch((error) => {
-            console.error("failed to get number of documents:", error)
+            console.error("failed to get number of documents:", error.message)
             next(error)
         })
 
@@ -60,6 +60,26 @@ app.get("/api/persons", (request, response, next) => {
         })
         .catch((error) => {
             console.error("Failed to retrieve people from DB:", error.message)
+            next(error)
+        })
+})
+
+app.post("/api/persons", (request, response, next) => {
+    // console.log("Body", request.body)
+
+    const { name, number } = request.body
+
+    const person = new Person({
+        name: name,
+        number: number
+    })
+    person
+        .save()
+        .then((result) => {
+            response.json(result)
+        })
+        .catch((error) => {
+            console.error("Failed to save to db:", error.message)
             next(error)
         })
 })
@@ -93,50 +113,24 @@ app.delete("/api/persons/:id", (request, response, next) => {
             response.status(204).end()
         })
         .catch((error) => {
-            console.error("Failed to delete:", error)
+            console.error("Failed to delete:", error.message)
             next(error)
         })
 })
 
 app.put("/api/persons/:id", (request, response, next) => {
     const { name, number } = request.body
-    const person = {
-        name: name,
-        number: number
-    }
+
     Person
-        .findByIdAndUpdate(request.params.id, person, { new: true })
+        .findByIdAndUpdate(
+            request.params.id,
+            { name, number },
+            { new: true, runValidators: true, context: "query" })
         .then((updatedPerson) => {
             response.json(updatedPerson)
         })
         .catch((error) => {
-            console.error("Failed tu update:", error)
-            next(error)
-        })
-})
-
-app.post("/api/persons", (request, response, next) => {
-    // console.log("Body", request.body)
-
-    const { name, number } = request.body
-    if ((!name) || (!number)) {
-        response.status(400).json({
-            error: "'name' and 'number' must be specified"
-        })
-        return
-    }
-
-    const person = new Person({
-        name: name,
-        number: number
-    })
-    person
-        .save()
-        .then((result) => {
-            response.json(result)
-        })
-        .catch((error) => {
-            console.error("Failed to save to db", error)
+            console.error("Failed tu update:", error.message)
             next(error)
         })
 })
@@ -149,7 +143,7 @@ const unknownEndpoint = (request, response) => {
 app.use(unknownEndpoint)
 
 const errorHandler = (error, request, response, next) => {
-    response.status(400).send({ error: error })
+    return response.status(400).json({ error: error.message })
 }
 
 app.use(errorHandler)

@@ -44,7 +44,8 @@ const App = () => {
           setMessage({ text: `Added '${newPerson.name}'`, type: "message" })
         })
         .catch((e) => {
-          setMessage({ text: `Failed to add '${newPerson.name}'`, type: "error" })
+          console.error(e.response.data.error)
+          setMessage({ text: `${e.response.data.error}`, type: "error" })
         })
     }
     // person already present
