@@ -1,4 +1,4 @@
-import express from "express"
+import express, { response } from "express"
 import morgan from "morgan"
 import cors from "cors"
 
@@ -35,7 +35,7 @@ app.use(express.static("dist"))
 //     }
 // ]
 
-app.get("/info", (request, response) => {
+app.get("/info", (request, response, next) => {
     Person
         .countDocuments({})
         .then((N) => {
@@ -45,13 +45,13 @@ app.get("/info", (request, response) => {
             )
         })
         .catch((error) => {
-            console.log("failed to get number of documents:", error)
-            response.status(500).end()
+            console.error("failed to get number of documents:", error)
+            next(error)
         })
 
 })
 
-app.get("/api/persons", (request, response) => {
+app.get("/api/persons", (request, response, next) => {
     Person
         .find({})
         .then((persons) => {
@@ -59,12 +59,12 @@ app.get("/api/persons", (request, response) => {
             response.json(persons)
         })
         .catch((error) => {
-            console.log("Failed to retrieve people from DB:", error.message)
-            response.status(500).end()
+            console.error("Failed to retrieve people from DB:", error.message)
+            next(error)
         })
 })
 
-app.get("/api/persons/:id", (request, response) => {
+app.get("/api/persons/:id", (request, response, next) => {
     const id = request.params.id
     Person
         .findById(id)
@@ -74,25 +74,48 @@ app.get("/api/persons/:id", (request, response) => {
                 response.json(person)
             }
             else {
-                console.log(`Failed to retrieve person with ID ${id}`)
+                console.error(`Failed to retrieve person with ID ${id}`)
                 response.status(404).end()
             }
         })
         .catch((error) => {
-            console.log(`Failed to retrieve person with ID ${id}:`, error.message)
-            response.status(404).end()
+            console.error(`Failed to retrieve person with ID ${id}:`, error.message)
+            next(error)
         })
 
 
 })
 
-app.delete("/api/persons/:id", (request, response) => {
-    const id = request.params.id
-    persons = persons.filter((p) => p.id !== id)
-    response.status(204).end()
+app.delete("/api/persons/:id", (request, response, next) => {
+    Person
+        .findByIdAndDelete(request.params.id)
+        .then((result) => {
+            response.status(204).end()
+        })
+        .catch((error) => {
+            console.error("Failed to delete:", error)
+            next(error)
+        })
 })
 
-app.post("/api/persons", (request, response) => {
+app.put("/api/persons/:id", (request, response, next) => {
+    const { name, number } = request.body
+    const person = {
+        name: name,
+        number: number
+    }
+    Person
+        .findByIdAndUpdate(request.params.id, person, { new: true })
+        .then((updatedPerson) => {
+            response.json(updatedPerson)
+        })
+        .catch((error) => {
+            console.error("Failed tu update:", error)
+            next(error)
+        })
+})
+
+app.post("/api/persons", (request, response, next) => {
     // console.log("Body", request.body)
 
     const { name, number } = request.body
@@ -102,12 +125,6 @@ app.post("/api/persons", (request, response) => {
         })
         return
     }
-    // if (persons.some((p) => p.name === name)) {
-    //     response.status(400).json({
-    //         error: `'${name}' is already in phonebook`
-    //     })
-    //     return
-    // }
 
     const person = new Person({
         name: name,
@@ -118,9 +135,24 @@ app.post("/api/persons", (request, response) => {
         .then((result) => {
             response.json(result)
         })
+        .catch((error) => {
+            console.error("Failed to save to db", error)
+            next(error)
+        })
 })
 
 
+const unknownEndpoint = (request, response) => {
+    response.status(404).send({ error: 'unknown endpoint' })
+}
+
+app.use(unknownEndpoint)
+
+const errorHandler = (error, request, response, next) => {
+    response.status(400).send({ error: error })
+}
+
+app.use(errorHandler)
 
 const PORT = process.env.PORT
 app.listen(PORT, () => {
